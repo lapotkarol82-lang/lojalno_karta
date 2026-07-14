@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karta Lojalnościowa - Karbike Detailing</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #fff; text-align: center; padding: 20px; }
+        .card { background: #2a2a2a; border-radius: 15px; padding: 20px; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h1 { color: #ffcc00; margin-bottom: 5px; }
+        .address { font-size: 14px; color: #aaa; margin-bottom: 25px; }
+        .card-info { font-size: 14px; color: #ffcc00; margin-bottom: 20px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stamp { width: 60px; height: 60px; background: #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; margin: 0 auto; transition: 0.3s; border: 2px dashed #666; }
+        .stamp.active { background: #ffcc00; color: #000; border-style: solid; border-color: #fff; font-weight: bold; }
+        .info { font-size: 14px; color: #ccc; margin-top: 15px; line-height: 1.4; }
+        .login-box { margin-bottom: 20px; padding: 10px 0; }
+        input { padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #666; background: #333; color: #fff; width: 60%; text-align: center; }
+        button { padding: 12px 20px; font-size: 16px; border-radius: 5px; border: none; background: #ffcc00; color: #000; font-weight: bold; cursor: pointer; margin-left: 10px; }
+        button:hover { background: #e6b800; }
+        .hidden { display: none; }
+        .logout-btn { background: #444; color: #aaa; padding: 6px 12px; font-size: 12px; margin-top: 25px; display: inline-block; border-radius: 5px; cursor: pointer; border: 1px solid #555; }
+        .logout-btn:hover { background: #cc0000; color: #fff; border-color: #cc0000; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Karbike Detailing</h1>
+        <div class="address">ul. Polna 15</div>
+
+        <!-- PANEL LOGOWANIA -->
+        <div id="loginSection" class="login-box">
+            <p style="margin-top: 0; color: #ccc;">Wpisz swój unikalny numer karty:</p>
+            <input type="text" id="cardNumberInput" placeholder="np. K-1001">
+            <button onclick="loginCustomer()">Zaloguj</button>
+        </div>
+
+        <!-- PANEL KARTY -->
+        <div id="cardSection" class="hidden">
+            <div class="card-info">Numer karty: <span id="displayCardNumber"></span></div>
+
+            <div class="grid" id="stampGrid"></div>
+            <div class="info">Zbierz 8 pieczątek, aby otrzymać darmowe mycie Premium!</div>
+            
+            <div class="logout-btn" onclick="logoutCustomer()">Wyloguj się</div>
+        </div>
+    </div>
+
+    <script>
+        const REQUIRED_PIN = "5448";
+        const TOTAL_STAMPS = 8;
+        
+        let loggedInCard = null;
+        let currentStamps = 0;
+
+        function loginCustomer() {
+            const cardInput = document.getElementById('cardNumberInput').value.trim().toUpperCase();
+            if (!cardInput) {
+                alert("Wpisz numer karty!");
+                return;
+            }
+
+            loggedInCard = cardInput;
+            
+            // Pobieranie pieczątek przypisanych do TEGO numeru karty z pamięci w tle
+            const savedStamps = localStorage.getItem('karbike_card_' + loggedInCard);
+            currentStamps = savedStamps ? parseInt(savedStamps) : 0;
+
+            document.getElementById('displayCardNumber').innerText = loggedInCard;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('cardSection').classList.remove('hidden');
+            
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('stampGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= TOTAL_STAMPS; i++) {
+                const stamp = document.createElement('div');
+                stamp.className = 'stamp' + (i <= currentStamps ? ' active' : '');
+                stamp.innerText = i <= currentStamps ? '✓' : i;
+                
+                stamp.onclick = () => {
+                    if (i === currentStamps + 1) {
+                        const pin = prompt("Wpisz kod PIN managera, aby dodać pieczątkę:");
+                        if (pin === REQUIRED_PIN) {
+                            currentStamps++;
+                            
+                            // Zapisywanie pieczątek tylko dla tej konkretnej karty
+                            localStorage.setItem('karbike_card_' + loggedInCard, currentStamps);
+                            renderGrid();
+                            
+                            if (currentStamps === TOTAL_STAMPS) {
+                                alert("Gratulacje! Odbierz darmowe mycie Premium!");
+                                currentStamps = 0;
+                                localStorage.setItem('karbike_card_' + loggedInCard, currentStamps);
+                                renderGrid();
+                            }
+                        } else if (pin !== null) {
+                            alert("Błędny kod PIN!");
+                        }
+                    }
+                };
+                grid.appendChild(stamp);
+            }
+        }
+
+        function logoutCustomer() {
+            loggedInCard = null;
+            currentStamps = 0;
+            document.getElementById('cardNumberInput').value = '';
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('cardSection').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
